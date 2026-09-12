@@ -136,7 +136,7 @@ fun HistoryScreen(viewModel: HistoryViewModel) {
                     VideoHistoryCard(
                         item = item,
                         onPlay = { viewModel.playVideo(item.videoId) },
-                        onRemove = { viewModel.removeItem(item.historyId) },
+                        onRemove = { viewModel.removeItem(item.videoId) },
                         onToggleFavorite = { viewModel.toggleFavorite(item.videoId, item.isFavorite) }
                     )
                 }

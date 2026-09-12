@@ -75,9 +75,9 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
-    fun removeItem(historyId: Long) {
+    fun removeItem(videoId: String) {
         viewModelScope.launch {
-            playbackRepository.deleteHistoryEntry(historyId)
+            playbackRepository.deleteHistoryForVideo(videoId)
         }
     }
 

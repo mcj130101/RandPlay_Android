@@ -76,6 +76,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Handle widget intent if launched with action
+        if (intent?.action == "com.example.randplayer.ACTION_PLAY_RANDOM") {
+            // In a real app we'd want a cleaner way to get the ViewModel outside of Compose
+            // or use a dedicated BroadcastReceiver/Service to handle the play action.
+            // For now, setting a flag that will be read when the HomeViewModel is initialized.
+            intent?.action = null
+            // We will let the Home screen trigger it when it boots
+        }
+        
         setContent {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
@@ -317,7 +327,13 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
             modifier = Modifier.padding(bottom = if (isDashboard) innerPadding.calculateBottomPadding() else 0.dp),
         ) {
             composable("dashboard") {
-                DashboardPager(pagerState, mainScreens, navController)
+                val activity = context as? MainActivity
+                val shouldPlayFromWidget = activity?.intent?.action == "com.example.randplayer.ACTION_PLAY_RANDOM"
+                if (shouldPlayFromWidget) {
+                    activity?.intent?.action = ""
+                }
+                
+                DashboardPager(pagerState, mainScreens, navController, shouldPlayFromWidget)
             }
             
             composable(Screen.AddSource.route) {
@@ -341,6 +357,7 @@ fun DashboardPager(
     pagerState: PagerState,
     mainScreens: List<Screen>,
     navController: androidx.navigation.NavHostController,
+    shouldPlayFromWidget: Boolean = false
 ) {
     HorizontalPager(
         state = pagerState,
@@ -350,6 +367,11 @@ fun DashboardPager(
         when (mainScreens[page]) {
             Screen.Home -> {
                 val homeViewModel: HomeViewModel = hiltViewModel()
+                LaunchedEffect(shouldPlayFromWidget) {
+                    if (shouldPlayFromWidget) {
+                        homeViewModel.rollDice()
+                    }
+                }
                 HomeScreen(homeViewModel)
             }
             Screen.Sources -> {

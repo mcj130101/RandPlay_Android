@@ -4,8 +4,10 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -13,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,7 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
@@ -50,6 +53,27 @@ fun DiceButton(
         label = "scale"
     )
 
+    // Pulsing animation for the outer ring
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.5f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+
     LaunchedEffect(isRolling) {
         if (isRolling) {
             rotation.animateTo(
@@ -67,45 +91,62 @@ fun DiceButton(
         }
     }
 
-    Surface(
-        modifier = modifier
-            .size(160.dp)
-            .scale(scale)
-            .rotate(if (isRolling) 0f else rotation.value),
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        tonalElevation = 8.dp,
-        shadowElevation = 4.dp
+    Box(
+        modifier = modifier.padding(24.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(
-                    enabled = !isRolling,
-                    onClick = onClick,
-                    interactionSource = interactionSource,
-                    indication = null
-                )
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primaryContainer,
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                        )
-                    )
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Casino,
-                contentDescription = "Roll Dice",
+        // Pulsing background ring
+        if (!isRolling) {
+            Surface(
                 modifier = Modifier
-                    .size(100.dp)
-                    .rotate(rotation.value),
-                tint = MaterialTheme.colorScheme.primary
-            )
+                    .size(160.dp)
+                    .scale(pulseScale)
+                    .alpha(pulseAlpha),
+                shape = RoundedCornerShape(32.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shadowElevation = 0.dp
+            ) {}
+        }
+
+        // Main Button
+        Surface(
+            modifier = Modifier
+                .size(160.dp)
+                .scale(scale)
+                .rotate(if (isRolling) 0f else rotation.value),
+            shape = RoundedCornerShape(32.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
+            tonalElevation = 8.dp,
+            shadowElevation = 4.dp
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        enabled = !isRolling,
+                        onClick = onClick,
+                        interactionSource = interactionSource,
+                        indication = null
+                    )
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primaryContainer,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Casino,
+                    contentDescription = "Roll Dice",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .rotate(rotation.value),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
-
-private fun Modifier.fillMaxSize() = this.then(Modifier.size(160.dp)) // Helper since we're in a Box

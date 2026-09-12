@@ -23,4 +23,6 @@ class PlaybackRepository @Inject constructor(
     suspend fun clearHistory() = historyDao.clearHistory()
 
     suspend fun deleteHistoryEntry(historyId: Long) = historyDao.deleteHistoryEntry(historyId)
+
+    suspend fun deleteHistoryForVideo(videoId: String) = historyDao.deleteHistoryForVideo(videoId)
 }

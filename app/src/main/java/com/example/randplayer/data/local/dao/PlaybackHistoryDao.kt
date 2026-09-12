@@ -29,10 +29,11 @@ interface PlaybackHistoryDao {
     fun getRecentHistory(limit: Int): Flow<List<PlaybackHistoryEntity>>
 
     @Query("""
-        SELECT h.id as historyId, v.id as videoId, v.fileName, h.playedAt, v.folderPath, v.playCount, v.isFavorite
+        SELECT MAX(h.id) as historyId, v.id as videoId, v.fileName, MAX(h.playedAt) as playedAt, v.folderPath, v.playCount, v.isFavorite
         FROM playback_history h
         INNER JOIN videos v ON h.videoId = v.id
-        ORDER BY h.playedAt DESC LIMIT :limit
+        GROUP BY v.id
+        ORDER BY playedAt DESC LIMIT :limit
     """)
     fun getRecentHistoryWithVideo(limit: Int): Flow<List<VideoHistoryItem>>
 

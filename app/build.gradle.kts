@@ -90,6 +90,10 @@ dependencies {
     implementation(libs.jcifsng)
     implementation(libs.nanohttpd)
 
+    // Glance
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

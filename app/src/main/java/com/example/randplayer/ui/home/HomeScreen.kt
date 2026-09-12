@@ -33,13 +33,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.randplayer.data.local.entity.VideoEntity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.randplayer.data.local.entity.VideoEntity
 import com.example.randplayer.ui.components.DiceButton
+import com.example.randplayer.ui.components.ShakeDetector
 
 @Composable
 fun HomeScreen(viewModel: HomeViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    ShakeDetector(onShake = { viewModel.rollDice() })
 
     Column(
         modifier = Modifier

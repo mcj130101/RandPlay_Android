@@ -1,31 +1,29 @@
-# Implementation Plan - Fix Player Selection Issues
+# Implementation Plan - Fix Missing Features & Restore Animation
 
-The user reported that player selection is not working as expected: MX Player always starts, and the specific app list in Settings is empty. This is primarily caused by Android's package visibility restrictions (introduced in API 30) and missing manifest declarations.
+This plan addresses the missing features (Shake to Roll, Widget) that were overlooked in the previous run, and reverts the Lottie animation back to the original Compose animation as requested.
 
 ## Proposed Changes
 
-### Android Manifest
+### 1. Restore Old Dice Animation
+- **[MODIFY] [DiceButton.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/ui/components/DiceButton.kt)**: Revert to the original `Animatable`-based rotation and scale animation.
+- **[MODIFY] [build.gradle.kts](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/build.gradle.kts)**: Remove `lottie-compose` dependency.
 
-#### [MODIFY] [AndroidManifest.xml](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/AndroidManifest.xml)
-- Add `<queries>` section to allow the app to see other installed video players. This is required for `queryIntentActivities` to work on Android 11+.
+### 2. Implement Shake to Play
+- **[NEW] [ShakeDetector.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/ui/components/ShakeDetector.kt)**: Create a reusable Compose effect that registers a `SensorEventListener` for the accelerometer and detects shake gestures.
+- **[MODIFY] [HomeScreen.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/ui/home/HomeScreen.kt)**: Apply the `ShakeDetector` to trigger `viewModel.rollDice()`.
 
-### Settings Screen
-
-#### [MODIFY] [SettingsScreen.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/ui/settings/SettingsScreen.kt)
-- Update `PlayerSelector` to use a more robust `Intent` for querying (e.g., using `content://` or just the MIME type).
-- Ensure `PackageManager.queryIntentActivities` is called with appropriate flags.
-- Add a check to show a placeholder if no players are found (though the `<queries>` fix should resolve this).
-
-### Main Activity (Playback Launch)
-
-#### [MODIFY] [MainActivity.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/MainActivity.kt)
-- Ensure the `Intent` used for `createChooser` is fresh and hasn't had any package set previously.
-- Explicitly reset the package to `null` before starting in "Ask Every Time" or "System Default" modes to prevent any accidental "stickiness".
+### 3. Implement Home Screen Widget
+- **[NEW] [DiceWidget.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/widget/DiceWidget.kt)**: Create `DiceWidget` (extending `GlanceAppWidget`) and `DiceWidgetReceiver` (extending `GlanceAppWidgetReceiver`).
+- **[NEW] [dice_widget_info.xml](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/res/xml/dice_widget_info.xml)**: Define the AppWidgetProviderInfo for the widget.
+- **[MODIFY] [AndroidManifest.xml](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/AndroidManifest.xml)**: Register the `DiceWidgetReceiver` so it appears in the Android widget list.
+- **[MODIFY] [MainActivity.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/MainActivity.kt)**: Add intent handling to roll the dice immediately if launched from the widget.
 
 ## Verification Plan
 
+### Automated Tests
+- Run `gradle_build app:assembleDebug` to verify no compilation errors.
+
 ### Manual Verification
-- **Manifest**: After adding `<queries>`, go to Settings -> Playback -> Choose Specific App. Verify that a list of installed video players (like VLC, MX Player, etc.) now appears in the dropdown.
-- **Ask Every Time**: Select "Ask Every Time" in Settings. Play a video. Verify that the Android system chooser appears, even if a default was previously set.
-- **Specific App**: Select a specific app (e.g., VLC). Play a video. Verify it launches VLC directly.
-- **System Default**: Select "System Default". Verify it uses the system's standard resolution.
+- **Dice Animation**: Open Home screen, click dice. Verify it uses the old rotating casino icon instead of Lottie.
+- **Shake to Play**: Physically shake the device while on the Home screen. Verify it triggers a roll.
+- **Widget**: Long-press the Android launcher home screen, open widgets, and verify "RandPlayer" widget is listed. Add it to the home screen.

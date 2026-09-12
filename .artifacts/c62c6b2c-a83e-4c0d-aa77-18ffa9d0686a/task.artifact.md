@@ -1,4 +1,8 @@
-- [x] Add `<queries>` to `AndroidManifest.xml`
-- [x] Refine player query logic in `SettingsScreen.kt`
-- [x] Verify `MainActivity.kt` logic and add safety resets
-- [x] Final verification
+- [x] Restore Original Dice Animation (with pulsing outer radius)
+- [x] Implement Shake to Play
+- [x] Implement Home Screen Widget
+    - [x] Create `DiceWidget.kt`
+    - [x] Create `dice_widget_info.xml`
+    - [x] Update `AndroidManifest.xml`
+    - [x] Handle widget intent in `MainActivity.kt`
+- [x] Verify build and functionality
