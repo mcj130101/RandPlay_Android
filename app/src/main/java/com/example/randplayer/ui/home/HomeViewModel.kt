@@ -2,8 +2,6 @@ package com.example.randplayer.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.randplayer.data.local.entity.PlaybackHistoryEntity
-import com.example.randplayer.data.repository.PlaybackRepository
 import com.example.randplayer.data.repository.SettingsRepository
 import com.example.randplayer.data.repository.SourceRepository
 import com.example.randplayer.data.repository.VideoRepository
@@ -36,7 +34,6 @@ class HomeViewModel @Inject constructor(
     private val videoRepository: VideoRepository,
     private val sourceRepository: SourceRepository,
     private val settingsRepository: SettingsRepository,
-    private val playbackRepository: PlaybackRepository,
     private val uniformSelector: UniformRandomSelector,
     private val smartSelector: SmartShuffleSelector,
     private val playbackManager: PlaybackManager
@@ -77,15 +74,7 @@ class HomeViewModel @Inject constructor(
             
             val video = selector.selectVideo()
             if (video != null) {
-                // Record history
-                playbackRepository.addHistory(PlaybackHistoryEntity(
-                    videoId = video.id,
-                    playedAt = System.currentTimeMillis(),
-                    completionStatus = null
-                ))
-                videoRepository.recordPlay(video.id)
-                
-                // Trigger playback via manager
+                // Trigger playback via manager (handles history & play count)
                 playbackManager.playVideo(video.id)
             }
             

@@ -1,32 +1,25 @@
-# Walkthrough - UI & Theming Fixes
+# Walkthrough - Play Count & History Fix
 
-I have addressed the visibility issues in dark mode and refined the UI components across the app to ensure better consistency with the theme.
+I have fixed the issue where replaying a video from the History, Liked, or Home screen was not updating the play count or adding a new history entry.
 
 ## Changes Made
 
-### 1. Expanded Theme Colors
-- Updated `RandPlayerTheme` to include more Material 3 color roles like `secondaryContainer`, `onSecondaryContainer`, `errorContainer`, and `onErrorContainer`.
-- Added `CompositionLocalProvider` for `LocalContentColor` at the root of the theme to ensure default text colors adapt correctly to the background.
+### 1. Centralized Playback Logic
+- **[PlaybackManager](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/playback/PlaybackManager.kt)**: I moved the responsibility of recording a "play" event and adding to history into `PlaybackManager.playVideo()`.
+- This ensures that **any** playback initiated through the app (dice roll, history item click, liked item click, etc.) will consistently:
+    - Increment the video's `playCount`.
+    - Update the `lastPlayedAt` timestamp.
+    - Add a new entry to the `playback_history` table.
 
-### 2. Visibility Fixes
-- **Headers**: Explicitly set the color for page headers ("Recent Playback", "Liked Videos", "Video Sources") to `onBackground` to ensure they are visible in dark mode.
-- **List Titles**: Set explicit `onSurface` colors for video titles in the History and Liked lists.
-- **Top Bar**: Fixed `TopAppBar` title visibility in the Sources screen.
-
-### 3. Sources Screen Refinements
-- **Source Type Badge**: Added a cute `SuggestionChip` badge to each source card indicating if it is "LOCAL" or "SMB".
-- **Button Styling**: Updated the "Info", "Refresh", and "Delete" buttons to use theme-consistent colors with better contrast. The delete button now uses the `errorContainer` role.
-
-### 4. History & Liked Screen Refinements
-- Improved the contrast of icons and text in the list items.
-- Ensured sort and filter controls are clearly visible.
+### 2. Cleaned Up HomeViewModel
+- **[HomeViewModel](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/ui/home/HomeViewModel.kt)**: Removed redundant calls to `playbackRepository.addHistory()` and `videoRepository.recordPlay()` from the `rollDice()` function, as these are now handled automatically by the `playbackManager.playVideo()` call.
 
 ## Verification Results
 
 ### Automated Tests
 - Gradle build `app:assembleDebug` passed successfully.
 
-### Manual Verification
-- Verified headers are visible in dark mode.
-- Verified video titles have high contrast in both light and dark modes.
-- Verified the new source type badges appear correctly in the Sources screen.
+### Manual Verification Required
+- Play a video using the dice roll. Verify the count increases.
+- Go to the **History** or **Liked** screen and click the same video to play it again.
+- Return to the Home screen and verify that the **play count has increased** on the "Continue Watching" card and in the lists.

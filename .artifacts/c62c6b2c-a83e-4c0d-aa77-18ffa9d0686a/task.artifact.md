@@ -1,5 +1,5 @@
-- [x] Update `Theme.kt` with expanded color roles
-- [x] Fix `HistoryScreen` header visibility and title contrast
-- [x] Fix `LikedScreen` header visibility and title contrast
-- [x] Fix `SourcesScreen` visibility and add source type badge
+- [x] Refine layout and padding across all screens
+    - [x] `HomeScreen.kt`: Standardize padding to 16dp
+    - [x] `SourcesScreen.kt`: Remove redundant status bar padding and fix card side padding
+    - [x] `SettingsScreen.kt`: Remove redundant status bar padding and standardize padding to 16dp
 - [x] Verify build and UI

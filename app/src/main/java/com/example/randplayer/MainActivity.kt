@@ -7,7 +7,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -29,9 +28,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
@@ -39,7 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
@@ -112,9 +109,9 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
     val currentRoute = navBackStackEntry?.destination?.route
     
     val mainScreens = listOf(Screen.Home, Screen.Sources, Screen.History,Screen.Liked, Screen.Settings)
-    val isDashboard = currentRoute == "dashboard" || currentRoute == null
+    val isDashboard = (currentRoute == "dashboard") || (currentRoute == null)
     
-    val pagerState = rememberPagerState(pageCount = { mainScreens.size })
+    val pagerState = rememberPagerState { mainScreens.size }
     val scope = rememberCoroutineScope()
 
     val context = LocalContext.current
@@ -142,7 +139,7 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                     intent.setPackage(preferredPlayer)
                     try {
                         context.startActivity(intent)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         intent.setPackage(null)
                         context.startActivity(intent)
                     }
@@ -150,7 +147,7 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                     context.startActivity(intent)
                 }
                 playbackManager.onPlaybackLaunched()
-            } catch (e: Exception) { }
+            } catch (_: Exception) { }
         }
     }
 
@@ -175,7 +172,7 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                         shadowElevation = 8.dp,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(72.dp)
+                            .height(72.dp),
                     ) {}
 
                     // Navbar Content
@@ -184,13 +181,17 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                             .fillMaxWidth()
                             .height(96.dp)
                             .padding(horizontal = 12.dp),
-                        contentAlignment = Alignment.BottomStart
+                        contentAlignment = Alignment.BottomStart,
                     ) {
                         val dockWidth = maxWidth
                         val itemWidth = dockWidth / mainScreens.size
                         
                         // Real-time Sliding Pill Indicator
-                        val pillX = itemWidth * (pagerState.currentPage + pagerState.currentPageOffsetFraction)
+                        val pillX by remember {
+                            derivedStateOf {
+                                itemWidth * (pagerState.currentPage + pagerState.currentPageOffsetFraction)
+                            }
+                        }
 
                         Surface(
                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
@@ -198,7 +199,7 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                             modifier = Modifier
                                 .width(itemWidth - 12.dp)
                                 .height(56.dp)
-                                .offset(x = pillX + 6.dp, y = (-8).dp)
+                                .offset(x = pillX + 6.dp, y = (-8).dp),
                         ) {}
 
                         Row(
@@ -211,19 +212,19 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                                 
                                 val contentColor by animateColorAsState(
                                     targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                    label = "content"
+                                    label = "content",
                                 )
                                 val circleColor by animateColorAsState(
                                     targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                    label = "circleColor"
+                                    label = "circleColor",
                                 )
                                 val iconColor by animateColorAsState(
                                     targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                    label = "iconColor"
+                                    label = "iconColor",
                                 )
                                 val circleElevation by animateDpAsState(
                                     targetValue = if (isSelected) 6.dp else 0.dp,
-                                    label = "elevation"
+                                    label = "elevation",
                                 )
                                 val iconOffset by animateDpAsState(
                                     targetValue = if (isSelected) (-38).dp else (-24).dp,
@@ -244,7 +245,7 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                                             selected = isSelected,
                                             onClick = {
                                                 scope.launch {
-                                                    pagerState.animateScrollToPage(index)
+                                                    pagerState.scrollToPage(index)
                                                 }
                                             },
                                             indication = null,
@@ -257,13 +258,13 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                                         modifier = Modifier
                                             .size(46.dp)
                                             .offset(y = iconOffset),
-                                        contentAlignment = Alignment.Center
+                                        contentAlignment = Alignment.Center,
                                     ) {
                                         Surface(
                                             color = circleColor,
                                             shape = CircleShape,
                                             modifier = Modifier.fillMaxSize(),
-                                            shadowElevation = circleElevation
+                                            shadowElevation = circleElevation,
                                         ) {}
                                         Icon(
                                             imageVector = screen.icon,
@@ -278,11 +279,11 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                                         text = screen.label,
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontSize = 11.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         ),
                                         color = contentColor,
                                         maxLines = 1,
-                                        modifier = Modifier.offset(y = textOffset)
+                                        modifier = Modifier.offset(y = textOffset),
                                     )
                                 }
                             }
@@ -295,7 +296,7 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
         NavHost(
             navController = navController, 
             startDestination = "dashboard", 
-            modifier = Modifier.padding(bottom = if (isDashboard) innerPadding.calculateBottomPadding() else 0.dp)
+            modifier = Modifier.padding(bottom = if (isDashboard) innerPadding.calculateBottomPadding() else 0.dp),
         ) {
             composable("dashboard") {
                 DashboardPager(pagerState, mainScreens, navController)
@@ -303,7 +304,7 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
             
             composable(Screen.AddSource.route) {
                 val viewModel: SourceEditorViewModel = hiltViewModel()
-                AddSourceScreen(viewModel, onNavigateBack = { navController.popBackStack() })
+                AddSourceScreen(viewModel) { navController.popBackStack() }
             }
             composable(Screen.Logs.route) { backStackEntry ->
                 val sourceId = backStackEntry.arguments?.getString("sourceId")
@@ -321,12 +322,12 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
 fun DashboardPager(
     pagerState: PagerState,
     mainScreens: List<Screen>,
-    navController: androidx.navigation.NavHostController
+    navController: androidx.navigation.NavHostController,
 ) {
     HorizontalPager(
         state = pagerState,
         modifier = Modifier.fillMaxSize(),
-        beyondViewportPageCount = 1
+        beyondViewportPageCount = 4
     ) { page ->
         when (mainScreens[page]) {
             Screen.Home -> {
@@ -338,8 +339,7 @@ fun DashboardPager(
                 SourcesScreen(
                     viewModel, 
                     onAddSource = { navController.navigate(Screen.AddSource.route) },
-                    onViewLogs = { sourceId -> navController.navigate("logs/$sourceId") }
-                )
+                ) { sourceId -> navController.navigate("logs/$sourceId") }
             }
             Screen.History -> {
                 val viewModel: HistoryViewModel = hiltViewModel()

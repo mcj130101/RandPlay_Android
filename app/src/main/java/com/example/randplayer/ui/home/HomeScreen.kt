@@ -45,54 +45,57 @@ fun HomeScreen(viewModel: HomeViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .padding(24.dp),
+            .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceEvenly
+        verticalArrangement = Arrangement.SpaceEvenly,
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            horizontalAlignment = Alignment.Start,
         ) {
             Text(
                 text = "RandPlayer",
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.onBackground
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
             )
             
             Text(
                 text = "Discover your next watch",
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
         DiceButton(
             isRolling = uiState.isRolling,
-            onClick = { viewModel.rollDice() }
+            onClick = { viewModel.rollDice() },
         )
 
         uiState.lastPlayedVideo?.let { video ->
             LastPlayedCard(
                 video = video,
                 onPlayClick = { viewModel.playVideo(video.id) },
-                onFavoriteClick = { viewModel.toggleFavorite(video.id, video.isFavorite) }
-            )
+            ) { viewModel.toggleFavorite(video.id, video.isFavorite) }
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             StatCard(
                 modifier = Modifier.weight(1f),
                 label = "Videos",
                 value = uiState.videoCount.toString(),
-                icon = Icons.Default.Movie
+                icon = Icons.Default.Movie,
             )
             StatCard(
                 modifier = Modifier.weight(1f),
                 label = "Sources",
                 value = uiState.sourceCount.toString(),
-                icon = Icons.Default.Source
+                icon = Icons.Default.Source,
             )
         }
     }
@@ -102,7 +105,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
 fun LastPlayedCard(
     video: VideoEntity,
     onPlayClick: () -> Unit,
-    onFavoriteClick: () -> Unit
+    onFavoriteClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -110,20 +113,20 @@ fun LastPlayedCard(
             .padding(vertical = 8.dp),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
-        )
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+        ),
     ) {
         Row(
             modifier = Modifier
                 .padding(20.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Surface(
                 modifier = Modifier.size(56.dp),
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
             ) {
                 IconButton(onClick = onPlayClick) {
                     Icon(
@@ -139,19 +142,19 @@ fun LastPlayedCard(
                 Text(
                     text = "Continue Watching",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
                     text = video.fileName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
                 Text(
                     text = "Played ${video.playCount} times",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -159,7 +162,7 @@ fun LastPlayedCard(
                 Icon(
                     imageVector = if (video.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = "Favorite",
-                    tint = if (video.isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = if (video.isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -171,35 +174,35 @@ fun StatCard(
     modifier: Modifier = Modifier,
     label: String,
     value: String,
-    icon: ImageVector
+    icon: ImageVector,
 ) {
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         shape = RoundedCornerShape(24.dp),
-        tonalElevation = 2.dp
+        tonalElevation = 2.dp,
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.Start
+            horizontalAlignment = Alignment.Start,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

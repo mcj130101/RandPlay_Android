@@ -28,15 +28,12 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -53,53 +50,55 @@ import com.example.randplayer.data.local.entity.VideoSourceEntity
 fun SourcesScreen(
     viewModel: SourcesViewModel,
     onAddSource: () -> Unit,
-    onViewLogs: (String) -> Unit
+    onViewLogs: (String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = { Text("Video Sources", fontWeight = FontWeight.SemiBold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    actionIconContentColor = MaterialTheme.colorScheme.onBackground
-                )
-            )
-        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddSource,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = RoundedCornerShape(16.dp),
-                elevation = FloatingActionButtonDefaults.elevation(4.dp)
+                elevation = FloatingActionButtonDefaults.elevation(4.dp),
             ) {
                 Icon(Icons.Default.Add, "Add Source")
             }
-        }
+        },
     ) { innerPadding ->
-        if (uiState.sources.isEmpty()) {
-            EmptySourcesView(modifier = Modifier.padding(innerPadding))
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(top = 8.dp)
-            ) {
-                items(uiState.sources, key = { it.id }) { source ->
-                    SourceItem(
-                        source = source,
-                        onSync = { viewModel.syncSource(source.id) },
-                        onDelete = { viewModel.deleteSource(source.id) },
-                        onViewLogs = { onViewLogs(source.id) }
-                    )
-                }
-                item {
-                    Spacer(modifier = Modifier.height(80.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
+        ) {
+            Text(
+                text = "Video Sources",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(vertical = 16.dp),
+            )
+
+            if (uiState.sources.isEmpty()) {
+                EmptySourcesView()
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(uiState.sources, key = { it.id }) { source ->
+                        SourceItem(
+                            source = source,
+                            onSync = { viewModel.syncSource(source.id) },
+                            onDelete = { viewModel.deleteSource(source.id) },
+                        ) { onViewLogs(source.id) }
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(80.dp))
+                    }
                 }
             }
         }
@@ -144,12 +143,12 @@ fun SourceItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(vertical = 6.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         ),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -207,34 +206,29 @@ fun SourceItem(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                IconButton(
-                    onClick = onViewLogs,
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                IconButton(onClick = onViewLogs) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Logs",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
                     )
-                ) {
-                    Icon(Icons.Default.Info, "Logs", modifier = Modifier.size(18.dp))
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(
-                    onClick = onSync,
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                IconButton(onClick = onSync) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Sync",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
                     )
-                ) {
-                    Icon(Icons.Default.Refresh, "Sync", modifier = Modifier.size(18.dp))
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(
-                    onClick = onDelete,
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteOutline,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                        modifier = Modifier.size(20.dp)
                     )
-                ) {
-                    Icon(Icons.Default.DeleteOutline, "Delete", modifier = Modifier.size(20.dp))
                 }
             }
         }

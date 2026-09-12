@@ -1,5 +1,7 @@
 package com.example.randplayer.playback
 
+import com.example.randplayer.data.local.entity.PlaybackHistoryEntity
+import com.example.randplayer.data.repository.PlaybackRepository
 import com.example.randplayer.data.repository.SourceRepository
 import com.example.randplayer.data.repository.VideoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,6 +13,7 @@ import javax.inject.Singleton
 class PlaybackManager @Inject constructor(
     private val videoRepository: VideoRepository,
     private val sourceRepository: SourceRepository,
+    private val playbackRepository: PlaybackRepository,
     private val localPlaybackProvider: LocalPlaybackProvider,
     private val smbPlaybackProvider: SmbPlaybackProvider
 ) {
@@ -29,6 +32,17 @@ class PlaybackManager @Inject constructor(
 
         try {
             val playbackSource = provider.prepare(video)
+            
+            // Record play and history
+            playbackRepository.addHistory(
+                PlaybackHistoryEntity(
+                    videoId = videoId,
+                    playedAt = System.currentTimeMillis(),
+                    completionStatus = null
+                )
+            )
+            videoRepository.recordPlay(videoId)
+            
             _playbackEvent.value = playbackSource
         } catch (e: Exception) {
             // Error handling could be added here (e.g. another StateFlow for errors)
