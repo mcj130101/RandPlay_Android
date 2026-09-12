@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.randplayer.domain.model.AppSettings
 import com.example.randplayer.domain.model.AppTheme
+import com.example.randplayer.domain.model.PlayerSelectionMode
 import com.example.randplayer.domain.model.RandomMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +37,7 @@ class SettingsRepository @Inject constructor(
         val SYNC_BEFORE_PLAYBACK = booleanPreferencesKey("sync_before_playback")
         val SUPPORTED_EXTENSIONS = stringSetPreferencesKey("supported_extensions")
         val PREFERRED_PLAYER = stringPreferencesKey("preferred_player")
+        val PLAYER_SELECTION_MODE = stringPreferencesKey("player_selection_mode")
         val THEME = stringPreferencesKey("theme")
     }
 
@@ -61,6 +63,9 @@ class SettingsRepository @Inject constructor(
                 syncBeforePlayback = preferences[PreferencesKeys.SYNC_BEFORE_PLAYBACK] ?: false,
                 supportedExtensions = (preferences[PreferencesKeys.SUPPORTED_EXTENSIONS] ?: AppSettings().supportedExtensions.toSet()).toList(),
                 preferredPlayerPackage = preferences[PreferencesKeys.PREFERRED_PLAYER],
+                playerSelectionMode = PlayerSelectionMode.valueOf(
+                    preferences[PreferencesKeys.PLAYER_SELECTION_MODE] ?: PlayerSelectionMode.SYSTEM_DEFAULT.name
+                ),
                 theme = AppTheme.valueOf(
                     preferences[PreferencesKeys.THEME] ?: AppTheme.SYSTEM.name
                 )
@@ -128,6 +133,12 @@ class SettingsRepository @Inject constructor(
             } else {
                 preferences.remove(PreferencesKeys.PREFERRED_PLAYER)
             }
+        }
+    }
+
+    suspend fun updatePlayerSelectionMode(mode: PlayerSelectionMode) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.PLAYER_SELECTION_MODE] = mode.name
         }
     }
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.randplayer.data.repository.SettingsRepository
 import com.example.randplayer.domain.model.AppSettings
 import com.example.randplayer.domain.model.AppTheme
+import com.example.randplayer.domain.model.PlayerSelectionMode
 import com.example.randplayer.domain.model.RandomMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -78,6 +79,12 @@ class SettingsViewModel @Inject constructor(
     fun setPreferredPlayer(packageName: String?) {
         viewModelScope.launch {
             settingsRepository.updatePreferredPlayer(packageName)
+        }
+    }
+
+    fun setPlayerSelectionMode(mode: PlayerSelectionMode) {
+        viewModelScope.launch {
+            settingsRepository.updatePlayerSelectionMode(mode)
         }
     }
 }

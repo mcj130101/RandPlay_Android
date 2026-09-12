@@ -1,5 +1,4 @@
-- [x] Refine layout and padding across all screens
-    - [x] `HomeScreen.kt`: Standardize padding to 16dp
-    - [x] `SourcesScreen.kt`: Remove redundant status bar padding and fix card side padding
-    - [x] `SettingsScreen.kt`: Remove redundant status bar padding and standardize padding to 16dp
-- [x] Verify build and UI
+- [x] Add `<queries>` to `AndroidManifest.xml`
+- [x] Refine player query logic in `SettingsScreen.kt`
+- [x] Verify `MainActivity.kt` logic and add safety resets
+- [x] Final verification

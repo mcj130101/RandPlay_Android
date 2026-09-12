@@ -92,9 +92,9 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun playVideo(videoId: String) {
+    fun playVideo(videoId: String, recordHistory: Boolean = true) {
         viewModelScope.launch {
-            playbackManager.playVideo(videoId)
+            playbackManager.playVideo(videoId, recordHistory)
         }
     }
 }

@@ -20,7 +20,7 @@ class PlaybackManager @Inject constructor(
     private val _playbackEvent = MutableStateFlow<PlaybackSource?>(null)
     val playbackEvent = _playbackEvent.asStateFlow()
 
-    suspend fun playVideo(videoId: String) {
+    suspend fun playVideo(videoId: String, recordHistory: Boolean = true) {
         val video = videoRepository.getVideoById(videoId) ?: return
         val source = sourceRepository.getSourceById(video.sourceId)
         
@@ -33,15 +33,17 @@ class PlaybackManager @Inject constructor(
         try {
             val playbackSource = provider.prepare(video)
             
-            // Record play and history
-            playbackRepository.addHistory(
-                PlaybackHistoryEntity(
-                    videoId = videoId,
-                    playedAt = System.currentTimeMillis(),
-                    completionStatus = null
+            if (recordHistory) {
+                // Record play and history
+                playbackRepository.addHistory(
+                    PlaybackHistoryEntity(
+                        videoId = videoId,
+                        playedAt = System.currentTimeMillis(),
+                        completionStatus = null
+                    )
                 )
-            )
-            videoRepository.recordPlay(videoId)
+                videoRepository.recordPlay(videoId)
+            }
             
             _playbackEvent.value = playbackSource
         } catch (e: Exception) {

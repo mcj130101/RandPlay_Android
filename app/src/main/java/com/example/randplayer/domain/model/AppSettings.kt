@@ -13,6 +13,12 @@ enum class AppTheme {
     DARK
 }
 
+enum class PlayerSelectionMode {
+    ASK_EVERY_TIME,
+    SYSTEM_DEFAULT,
+    SPECIFIC_APP
+}
+
 data class AppSettings(
     val randomMode: RandomMode = RandomMode.UNIFORM,
     val smartShuffleHistoryLimit: Int = 50,
@@ -26,5 +32,6 @@ data class AppSettings(
         "mp4", "mkv", "avi", "mov", "webm", "m4v", "mpeg", "mpg", "ts", "m2ts", "3gp", "flv", "wmv"
     ),
     val preferredPlayerPackage: String? = null,
+    val playerSelectionMode: PlayerSelectionMode = PlayerSelectionMode.SYSTEM_DEFAULT,
     val theme: AppTheme = AppTheme.SYSTEM
 )

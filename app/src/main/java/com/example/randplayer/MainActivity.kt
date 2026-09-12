@@ -45,6 +45,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.randplayer.domain.model.AppSettings
 import com.example.randplayer.domain.model.AppTheme
+import com.example.randplayer.domain.model.PlayerSelectionMode
 import com.example.randplayer.playback.PlaybackManager
 import com.example.randplayer.playback.PlaybackSource
 import com.example.randplayer.ui.history.HistoryScreen
@@ -133,18 +134,35 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                 }
             }
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            
             try {
-                val preferredPlayer = appSettings.preferredPlayerPackage
-                if (!preferredPlayer.isNullOrEmpty()) {
-                    intent.setPackage(preferredPlayer)
-                    try {
-                        context.startActivity(intent)
-                    } catch (_: Exception) {
-                        intent.setPackage(null)
+                when (appSettings.playerSelectionMode) {
+                    PlayerSelectionMode.SPECIFIC_APP -> {
+                        val preferredPlayer = appSettings.preferredPlayerPackage
+                        if (!preferredPlayer.isNullOrEmpty()) {
+                            intent.setPackage(preferredPlayer)
+                            try {
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                // Fallback to system default if package not found
+                                intent.setPackage(null)
+                                context.startActivity(intent)
+                            }
+                        } else {
+                            context.startActivity(intent)
+                        }
+                    }
+                    PlayerSelectionMode.ASK_EVERY_TIME -> {
+                        // Remove FLAG_ACTIVITY_NEW_TASK from the inner intent when using chooser
+                        // or make sure the chooser itself has it if needed.
+                        // Chooser usually doesn't need it if started from Activity context.
+                        val chooser = Intent.createChooser(intent, "Open video with...")
+                        chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(chooser)
+                    }
+                    PlayerSelectionMode.SYSTEM_DEFAULT -> {
                         context.startActivity(intent)
                     }
-                } else {
-                    context.startActivity(intent)
                 }
                 playbackManager.onPlaybackLaunched()
             } catch (_: Exception) { }

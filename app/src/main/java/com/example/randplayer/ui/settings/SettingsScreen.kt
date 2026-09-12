@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.randplayer.domain.model.AppTheme
+import com.example.randplayer.domain.model.PlayerSelectionMode
 import com.example.randplayer.domain.model.RandomMode
 import kotlin.math.roundToInt
 
@@ -137,10 +138,18 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             }
 
             SettingsSection(title = "Playback", icon = Icons.Default.PlayCircle) {
-                PlayerSelector(
-                    currentPackage = settings.preferredPlayerPackage,
-                    onPlayerSelected = { viewModel.setPreferredPlayer(it) }
+                PlayerModeSelector(
+                    currentMode = settings.playerSelectionMode,
+                    onModeSelected = { viewModel.setPlayerSelectionMode(it) }
                 )
+
+                if (settings.playerSelectionMode == PlayerSelectionMode.SPECIFIC_APP) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    PlayerSelector(
+                        currentPackage = settings.preferredPlayerPackage,
+                        onPlayerSelected = { viewModel.setPreferredPlayer(it) }
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(48.dp))
@@ -297,18 +306,87 @@ fun ThemeSelector(currentTheme: AppTheme, onThemeSelected: (AppTheme) -> Unit) {
 }
 
 @Composable
+fun PlayerModeSelector(currentMode: PlayerSelectionMode, onModeSelected: (PlayerSelectionMode) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("Player Logic", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+        Box {
+            Surface(
+                onClick = { expanded = true },
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val displayText = when (currentMode) {
+                        PlayerSelectionMode.ASK_EVERY_TIME -> "Ask Every Time"
+                        PlayerSelectionMode.SYSTEM_DEFAULT -> "System Default"
+                        PlayerSelectionMode.SPECIFIC_APP -> "Specific App"
+                    }
+                    Text(
+                        text = displayText,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                PlayerSelectionMode.entries.forEach { mode ->
+                    val itemText = when (mode) {
+                        PlayerSelectionMode.ASK_EVERY_TIME -> "Ask Every Time"
+                        PlayerSelectionMode.SYSTEM_DEFAULT -> "System Default"
+                        PlayerSelectionMode.SPECIFIC_APP -> "Choose Specific App"
+                    }
+                    DropdownMenuItem(
+                        text = { Text(itemText) },
+                        onClick = {
+                            onModeSelected(mode)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun PlayerSelector(currentPackage: String?, onPlayerSelected: (String?) -> Unit) {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     
-    val players = remember {
+    val players = remember<List<Pair<String, String>>> {
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(android.net.Uri.parse("file:///sdcard/video.mp4"), "video/*")
+            type = "video/*"
         }
         val pm = context.packageManager
-        pm.queryIntentActivities(intent, PackageManager.MATCH_ALL).map {
+        
+        @Suppress("DEPRECATION")
+        val resolved = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            pm.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0L))
+        } else {
+            pm.queryIntentActivities(intent, 0)
+        }
+
+        resolved.map {
             it.activityInfo.packageName to it.loadLabel(pm).toString()
-        }.distinctBy { it.first }.sortedBy { it.second }
+        }
+        .filter { it.first != context.packageName } // Don't show self
+        .distinctBy { it.first }
+        .sortedBy { it.second }
     }
 
     val selectedLabel = players.find { it.first == currentPackage }?.second ?: "System Default"

@@ -77,7 +77,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
         uiState.lastPlayedVideo?.let { video ->
             LastPlayedCard(
                 video = video,
-                onPlayClick = { viewModel.playVideo(video.id) },
+                onPlayClick = { viewModel.playVideo(video.id, recordHistory = false) },
             ) { viewModel.toggleFavorite(video.id, video.isFavorite) }
         }
 

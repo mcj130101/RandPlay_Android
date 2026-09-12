@@ -1,36 +1,31 @@
-# Implementation Plan - Layout Refinements
+# Implementation Plan - Fix Player Selection Issues
 
-This plan addresses layout issues in the Sources and Settings screens, specifically focusing on vertical header alignment and redundant side padding.
+The user reported that player selection is not working as expected: MX Player always starts, and the specific app list in Settings is empty. This is primarily caused by Android's package visibility restrictions (introduced in API 30) and missing manifest declarations.
 
 ## Proposed Changes
 
-### Home Screen
+### Android Manifest
 
-#### [MODIFY] [HomeScreen.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/ui/home/HomeScreen.kt)
-- Fix side padding: Change `padding(24.dp)` to `padding(horizontal = 16.dp)` to match other screens.
-- Fix vertical alignment: Ensure the top padding isn't excessive.
-
-### Sources Screen
-
-#### [MODIFY] [SourcesScreen.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/ui/sources/SourcesScreen.kt)
-- Fix vertical alignment: Remove `statusBarsPadding()` from the `Column`. Rely on `padding(innerPadding)` from the internal `Scaffold`, which should correctly handle the top inset in an edge-to-edge environment.
-- Fix side padding: Remove `horizontal = 16.dp` from the `SourceItem` card modifier to avoid double-padding (as the parent `Column` already has 16dp horizontal padding).
+#### [MODIFY] [AndroidManifest.xml](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/AndroidManifest.xml)
+- Add `<queries>` section to allow the app to see other installed video players. This is required for `queryIntentActivities` to work on Android 11+.
 
 ### Settings Screen
 
 #### [MODIFY] [SettingsScreen.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/ui/settings/SettingsScreen.kt)
-- Fix vertical alignment: Remove `statusBarsPadding()` from the `Column`.
-- Adjust padding for consistency: Use `horizontal = 16.dp` instead of `20.dp` to match other screens.
+- Update `PlayerSelector` to use a more robust `Intent` for querying (e.g., using `content://` or just the MIME type).
+- Ensure `PackageManager.queryIntentActivities` is called with appropriate flags.
+- Add a check to show a placeholder if no players are found (though the `<queries>` fix should resolve this).
 
-### History & Liked Screens
+### Main Activity (Playback Launch)
 
-#### [MODIFY] [HistoryScreen.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/ui/history/HistoryScreen.kt)
-- Verify if `statusBarsPadding()` is redundant when combined with the parent `Scaffold`'s `innerPadding`.
-- *Correction*: Since these screens don't have their own `Scaffold`, `statusBarsPadding()` is correct here as the parent `MainActivity` doesn't apply top padding.
+#### [MODIFY] [MainActivity.kt](file:///C:/Users/mcj13/AndroidStudioProjects/RandPlayer/app/src/main/java/com/example/randplayer/MainActivity.kt)
+- Ensure the `Intent` used for `createChooser` is fresh and hasn't had any package set previously.
+- Explicitly reset the package to `null` before starting in "Ask Every Time" or "System Default" modes to prevent any accidental "stickiness".
 
 ## Verification Plan
 
 ### Manual Verification
-- **Header Position**: Check if "Video Sources" and "Settings" headers are correctly aligned with the status bar (not too low).
-- **Card Width**: Verify that the cards in the Video Sources list now align perfectly with the header, without extra side padding.
-- **Consistency**: Ensure all screens (Home, Sources, History, Liked, Settings) have consistent horizontal margins for their content.
+- **Manifest**: After adding `<queries>`, go to Settings -> Playback -> Choose Specific App. Verify that a list of installed video players (like VLC, MX Player, etc.) now appears in the dropdown.
+- **Ask Every Time**: Select "Ask Every Time" in Settings. Play a video. Verify that the Android system chooser appears, even if a default was previously set.
+- **Specific App**: Select a specific app (e.g., VLC). Play a video. Verify it launches VLC directly.
+- **System Default**: Select "System Default". Verify it uses the system's standard resolution.
