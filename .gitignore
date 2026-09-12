@@ -1,0 +1,61 @@
+# Built objects
+*.pyc
+*.obj
+*.o
+*.lib
+*.exp
+*.dll
+*.class
+
+# Android
+*.iml
+.gradle/
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# IntelliJ IDEA
+*.iws
+*.out
+.idea/tasks.xml
+.idea/datasources.xml
+.idea/dataSources.ids
+.idea/sqlDataSources.xml
+.idea/dynamic.xml
+.idea/uiDesigner.xml
+.idea/gradle.xml
+.idea/compiler.xml
+.idea/misc.xml
+.idea/copyright/
+.idea/scopes/
+.idea/dictionaries
+.idea/vcs.xml
+.idea/jsLibraryMappings.xml
+.idea/inspectionProfiles/
+.idea/runConfigurations/
+.idea/remote-targets.xml
+
+# Log files
+*.log
+
+# Android Studio
+*.keystore
+!debug.keystore
+google-services.json
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

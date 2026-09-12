@@ -1,0 +1,5 @@
+- [x] Update `Theme.kt` with expanded color roles
+- [x] Fix `HistoryScreen` header visibility and title contrast
+- [x] Fix `LikedScreen` header visibility and title contrast
+- [x] Fix `SourcesScreen` visibility and add source type badge
+- [x] Verify build and UI
