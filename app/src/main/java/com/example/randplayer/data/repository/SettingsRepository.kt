@@ -30,6 +30,7 @@ class SettingsRepository @Inject constructor(
         val RANDOM_MODE = stringPreferencesKey("random_mode")
         val SMART_SHUFFLE_LIMIT = intPreferencesKey("smart_shuffle_limit")
         val AUTO_SYNC = booleanPreferencesKey("auto_sync")
+        val PLAY_ON_SHAKE = booleanPreferencesKey("play_on_shake")
         val SYNC_INTERVAL = intPreferencesKey("sync_interval")
         val SYNC_WIFI_ONLY = booleanPreferencesKey("sync_wifi_only")
         val SYNC_ON_MOBILE = booleanPreferencesKey("sync_on_mobile")
@@ -54,6 +55,7 @@ class SettingsRepository @Inject constructor(
                 randomMode = RandomMode.valueOf(
                     preferences[PreferencesKeys.RANDOM_MODE] ?: RandomMode.UNIFORM.name
                 ),
+                playOnShakeEnabled = preferences[PreferencesKeys.PLAY_ON_SHAKE] ?: true,
                 smartShuffleHistoryLimit = preferences[PreferencesKeys.SMART_SHUFFLE_LIMIT] ?: 50,
                 autoSyncEnabled = preferences[PreferencesKeys.AUTO_SYNC] ?: true,
                 syncIntervalHours = preferences[PreferencesKeys.SYNC_INTERVAL] ?: 6,
@@ -105,6 +107,12 @@ class SettingsRepository @Inject constructor(
     suspend fun updateSyncOnMobile(onMobile: Boolean) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.SYNC_ON_MOBILE] = onMobile
+        }
+    }
+
+    suspend fun updatePlayOnShake(playOnShake: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.PLAY_ON_SHAKE] = playOnShake
         }
     }
 

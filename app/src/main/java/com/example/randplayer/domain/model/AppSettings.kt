@@ -22,6 +22,7 @@ enum class PlayerSelectionMode {
 data class AppSettings(
     val randomMode: RandomMode = RandomMode.UNIFORM,
     val smartShuffleHistoryLimit: Int = 50,
+    val playOnShakeEnabled: Boolean = true,
     val autoSyncEnabled: Boolean = true,
     val syncIntervalHours: Int = 6,
     val syncWifiOnly: Boolean = true,

@@ -20,8 +20,8 @@ class PlaybackManager @Inject constructor(
     private val _playbackEvent = MutableStateFlow<PlaybackSource?>(null)
     val playbackEvent = _playbackEvent.asStateFlow()
 
-    suspend fun playVideo(videoId: String, recordHistory: Boolean = true) {
-        val video = videoRepository.getVideoById(videoId) ?: return
+    suspend fun preparePlayback(videoId: String, recordHistory: Boolean = true): PlaybackSource? {
+        val video = videoRepository.getVideoById(videoId) ?: return null
         val source = sourceRepository.getSourceById(video.sourceId)
         
         val provider: VideoPlaybackProvider = if (source?.type?.name == "SMB") {
@@ -30,7 +30,7 @@ class PlaybackManager @Inject constructor(
             localPlaybackProvider
         }
 
-        try {
+        return try {
             val playbackSource = provider.prepare(video)
             
             if (recordHistory) {
@@ -45,9 +45,17 @@ class PlaybackManager @Inject constructor(
                 videoRepository.recordPlay(videoId)
             }
             
-            _playbackEvent.value = playbackSource
+            playbackSource
         } catch (e: Exception) {
             // Error handling could be added here (e.g. another StateFlow for errors)
+            null
+        }
+    }
+
+    suspend fun playVideo(videoId: String, recordHistory: Boolean = true) {
+        val playbackSource = preparePlayback(videoId, recordHistory)
+        if (playbackSource != null) {
+            _playbackEvent.value = playbackSource
         }
     }
 

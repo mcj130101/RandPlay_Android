@@ -40,6 +40,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setPlayOnShake(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updatePlayOnShake(enabled)
+        }
+    }
+
     fun setSyncInterval(hours: Int) {
         viewModelScope.launch {
             settingsRepository.updateSyncInterval(hours)

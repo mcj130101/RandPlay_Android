@@ -37,12 +37,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.randplayer.data.local.entity.VideoEntity
 import com.example.randplayer.ui.components.DiceButton
 import com.example.randplayer.ui.components.ShakeDetector
+import com.example.randplayer.ui.settings.SettingsViewModel
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel) {
+fun HomeScreen(viewModel: HomeViewModel, settingsViewModel: SettingsViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val settingState by settingsViewModel.settings.collectAsStateWithLifecycle()
 
-    ShakeDetector(onShake = { viewModel.rollDice() })
+    if (settingState.playOnShakeEnabled){
+        ShakeDetector(onShake = { viewModel.rollDice() })
+    }
 
     Column(
         modifier = Modifier

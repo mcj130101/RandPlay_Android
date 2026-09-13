@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -102,6 +103,16 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 }
             }
 
+            SettingsSection(title = "Play On Shake", icon = Icons.Default.Vibration) {
+                SettingSwitch(
+                    label = "Play On Shake",
+                    description = "Enable Device Shaking to Play Random Videos.",
+                    checked = settings.playOnShakeEnabled,
+                    onCheckedChange = { viewModel.setPlayOnShake(it) }
+                )
+
+            }
+
             SettingsSection(title = "Synchronization", icon = Icons.Default.Sync) {
                 SettingSwitch(
                     label = "Auto Sync",
@@ -150,6 +161,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         onPlayerSelected = { viewModel.setPreferredPlayer(it) }
                     )
                 }
+
             }
             
             Spacer(modifier = Modifier.height(48.dp))

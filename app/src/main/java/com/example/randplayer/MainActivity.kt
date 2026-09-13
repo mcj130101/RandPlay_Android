@@ -1,10 +1,12 @@
 package com.example.randplayer
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -77,15 +79,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        // Handle widget intent if launched with action
-        if (intent?.action == "com.example.randplayer.ACTION_PLAY_RANDOM") {
-            // In a real app we'd want a cleaner way to get the ViewModel outside of Compose
-            // or use a dedicated BroadcastReceiver/Service to handle the play action.
-            // For now, setting a flag that will be read when the HomeViewModel is initialized.
-            intent?.action = null
-            // We will let the Home screen trigger it when it boots
-        }
-        
         setContent {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
@@ -105,9 +98,9 @@ class MainActivity : ComponentActivity() {
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Home : Screen("home", "Home", Icons.Rounded.Casino)
-    object Sources : Screen("sources", "Sources", Icons.AutoMirrored.Filled.List)
     object History : Screen("history", "History", Icons.Default.History)
     object Liked : Screen("liked", label = "Liked", Icons.Default.Favorite)
+    object Sources : Screen("sources", "Sources", Icons.AutoMirrored.Filled.List)
     object Settings : Screen("settings", "Settings", Icons.Default.Settings)
     object AddSource : Screen("add_source", "Add Source", Icons.AutoMirrored.Filled.ListAlt)
     object Logs : Screen("logs/{sourceId}", "Logs", Icons.AutoMirrored.Filled.ListAlt)
@@ -119,7 +112,7 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     
-    val mainScreens = listOf(Screen.Home, Screen.Sources, Screen.History,Screen.Liked, Screen.Settings)
+    val mainScreens = listOf(Screen.Home, Screen.History,Screen.Liked, Screen.Sources, Screen.Settings)
     val isDashboard = (currentRoute == "dashboard") || (currentRoute == null)
     
     val pagerState = rememberPagerState { mainScreens.size }
@@ -327,13 +320,7 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
             modifier = Modifier.padding(bottom = if (isDashboard) innerPadding.calculateBottomPadding() else 0.dp),
         ) {
             composable("dashboard") {
-                val activity = context as? MainActivity
-                val shouldPlayFromWidget = activity?.intent?.action == "com.example.randplayer.ACTION_PLAY_RANDOM"
-                if (shouldPlayFromWidget) {
-                    activity?.intent?.action = ""
-                }
-                
-                DashboardPager(pagerState, mainScreens, navController, shouldPlayFromWidget)
+                DashboardPager(pagerState, mainScreens, navController)
             }
             
             composable(Screen.AddSource.route) {
@@ -357,7 +344,6 @@ fun DashboardPager(
     pagerState: PagerState,
     mainScreens: List<Screen>,
     navController: androidx.navigation.NavHostController,
-    shouldPlayFromWidget: Boolean = false
 ) {
     HorizontalPager(
         state = pagerState,
@@ -367,19 +353,8 @@ fun DashboardPager(
         when (mainScreens[page]) {
             Screen.Home -> {
                 val homeViewModel: HomeViewModel = hiltViewModel()
-                LaunchedEffect(shouldPlayFromWidget) {
-                    if (shouldPlayFromWidget) {
-                        homeViewModel.rollDice()
-                    }
-                }
-                HomeScreen(homeViewModel)
-            }
-            Screen.Sources -> {
-                val viewModel: SourcesViewModel = hiltViewModel()
-                SourcesScreen(
-                    viewModel, 
-                    onAddSource = { navController.navigate(Screen.AddSource.route) },
-                ) { sourceId -> navController.navigate("logs/$sourceId") }
+                val settingsViewModel: SettingsViewModel = hiltViewModel()
+                HomeScreen(homeViewModel, settingsViewModel)
             }
             Screen.History -> {
                 val viewModel: HistoryViewModel = hiltViewModel()
@@ -388,6 +363,13 @@ fun DashboardPager(
             Screen.Liked -> {
                 val viewModel: LikedViewModel = hiltViewModel()
                 LikedScreen(viewModel)
+            }
+            Screen.Sources -> {
+                val viewModel: SourcesViewModel = hiltViewModel()
+                SourcesScreen(
+                    viewModel,
+                    onAddSource = { navController.navigate(Screen.AddSource.route) },
+                ) { sourceId -> navController.navigate("logs/$sourceId") }
             }
             Screen.Settings -> {
                 val viewModel: SettingsViewModel = hiltViewModel()
