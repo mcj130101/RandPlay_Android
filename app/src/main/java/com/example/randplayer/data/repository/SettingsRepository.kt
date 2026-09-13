@@ -40,6 +40,7 @@ class SettingsRepository @Inject constructor(
         val PREFERRED_PLAYER = stringPreferencesKey("preferred_player")
         val PLAYER_SELECTION_MODE = stringPreferencesKey("player_selection_mode")
         val THEME = stringPreferencesKey("theme")
+        val ACCENT_COLOR = stringPreferencesKey("accent_color")
     }
 
     val settingsFlow: Flow<AppSettings> = dataStore.data
@@ -70,7 +71,8 @@ class SettingsRepository @Inject constructor(
                 ),
                 theme = AppTheme.valueOf(
                     preferences[PreferencesKeys.THEME] ?: AppTheme.SYSTEM.name
-                )
+                ),
+                accentColorHex = preferences[PreferencesKeys.ACCENT_COLOR] ?: "#3B82F6"
             )
         }
 
@@ -153,6 +155,12 @@ class SettingsRepository @Inject constructor(
     suspend fun updateTheme(theme: AppTheme) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.THEME] = theme.name
+        }
+    }
+
+    suspend fun updateAccentColor(hex: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ACCENT_COLOR] = hex
         }
     }
 }

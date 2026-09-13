@@ -23,7 +23,6 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
-import androidx.glance.layout.size
 import com.example.randplayer.R
 import com.example.randplayer.data.repository.SettingsRepository
 import com.example.randplayer.domain.model.PlayerSelectionMode
@@ -37,6 +36,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.first
+import androidx.core.graphics.toColorInt
+import androidx.glance.layout.size
 
 class DiceWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = DiceWidget()
@@ -44,20 +45,30 @@ class DiceWidgetReceiver : GlanceAppWidgetReceiver() {
 
 class DiceWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val entryPoint = EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            PlayRandomVideoAction.WidgetEntryPoint::class.java
+        )
+        val settings = entryPoint.settingsRepository().settingsFlow.first()
+        val accentColor = try {
+            Color(settings.accentColorHex.toColorInt())
+        } catch (_: Exception) {
+            Color(0xFF3B82F6) // Fallback Blue 500
+        }
+
         provideContent {
             Box(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .padding(12.dp) // Adjusted to be slightly larger than the 12dp version
-                    .clickable(actionRunCallback<PlayRandomVideoAction>()),
+                    .padding(12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // We use a simple image for the widget since Glance doesn't support complex Compose Canvas
                 Box(
                     modifier = GlanceModifier
                         .fillMaxSize()
-                        .background(Color(0xFF3B82F6)) // Blue500
-                        .cornerRadius(16.dp),
+                        .background(accentColor)
+                        .cornerRadius(16.dp)
+                        .clickable(actionRunCallback<PlayRandomVideoAction>()),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(

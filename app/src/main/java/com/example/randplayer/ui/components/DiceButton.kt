@@ -31,10 +31,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -91,62 +94,61 @@ fun DiceButton(
         }
     }
 
+    val buttonShape = RoundedCornerShape(48.dp) // Even smoother
+
     Box(
         modifier = modifier.padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
         // Pulsing background ring
         if (!isRolling) {
-            Surface(
+            Box(
                 modifier = Modifier
                     .size(160.dp)
                     .scale(pulseScale)
-                    .alpha(pulseAlpha),
-                shape = RoundedCornerShape(32.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shadowElevation = 0.dp
-            ) {}
+                    .alpha(pulseAlpha)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        shape = buttonShape
+                    )
+            )
         }
 
         // Main Button
-        Surface(
+        Box(
             modifier = Modifier
                 .size(160.dp)
                 .scale(scale)
-                .rotate(if (isRolling) 0f else rotation.value),
-            shape = RoundedCornerShape(32.dp),
-            color = MaterialTheme.colorScheme.primaryContainer,
-            tonalElevation = 8.dp,
-            shadowElevation = 4.dp
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable(
-                        enabled = !isRolling,
-                        onClick = onClick,
-                        interactionSource = interactionSource,
-                        indication = null
-                    )
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                            )
+                .rotate(if (isRolling) 0f else rotation.value)
+                .graphicsLayer {
+                    shadowElevation = 12.dp.toPx()
+                    shape = buttonShape
+                    clip = true // Force clipping at the graphics layer level
+                }
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
                         )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Casino,
-                    contentDescription = "Roll Dice",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .rotate(rotation.value),
-                    tint = MaterialTheme.colorScheme.primary
+                    )
                 )
-            }
+                .clickable(
+                    enabled = !isRolling,
+                    onClick = onClick,
+                    interactionSource = interactionSource,
+                    indication = null
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Casino,
+                contentDescription = "Roll Dice",
+                modifier = Modifier
+                    .size(100.dp)
+                    .rotate(rotation.value),
+                tint = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

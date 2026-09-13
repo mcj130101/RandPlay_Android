@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Vibration
@@ -81,6 +82,11 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 ThemeSelector(
                     currentTheme = settings.theme,
                     onThemeSelected = { viewModel.setTheme(it) }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                AccentColorSelector(
+                    currentColor = settings.accentColorHex,
+                    onColorSelected = { viewModel.setAccentColor(it) }
                 )
             }
 
@@ -311,6 +317,60 @@ fun ThemeSelector(currentTheme: AppTheme, onThemeSelected: (AppTheme) -> Unit) {
                             expanded = false
                         }
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AccentColorSelector(currentColor: String, onColorSelected: (String) -> Unit) {
+    val colors = listOf(
+        "#3B82F6", // Blue
+        "#8B5CF6", // Purple
+        "#10B981", // Green
+        "#EF4444", // Red
+        "#F59E0B", // Orange
+        "#EC4899", // Pink
+        "#06B6D4"  // Cyan
+    )
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Accent Color",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            colors.forEach { hex ->
+                val color = androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(hex))
+                val isSelected = currentColor.equals(hex, ignoreCase = true)
+                
+                Surface(
+                    onClick = { onColorSelected(hex) },
+                    modifier = Modifier.size(36.dp),
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    color = color,
+                    border = if (isSelected) {
+                        androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface)
+                    } else null,
+                    tonalElevation = if (isSelected) 8.dp else 0.dp
+                ) {
+                    if (isSelected) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = if (hex == "#F59E0B") androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -1,0 +1,6 @@
+- [x] Restore original Blue theme constants and background image logic in `Theme.kt`
+- [x] Implement conditional theme/background logic in `RandPlayerTheme`
+- [x] Fix "transparent square" issue in `DiceWidget.kt`
+- [x] Verify Blue theme looks original
+- [x] Verify other themes still use Aura background
+- [x] Verify widget visual artifacts are gone

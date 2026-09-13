@@ -89,7 +89,10 @@ class MainActivity : ComponentActivity() {
                 AppTheme.DARK -> true
             }
 
-            RandPlayerTheme(darkTheme = isDarkTheme) {
+            RandPlayerTheme(
+                accentColorHex = settings.accentColorHex,
+                darkTheme = isDarkTheme
+            ) {
                 MainScreen(playbackManager, settings)
             }
         }

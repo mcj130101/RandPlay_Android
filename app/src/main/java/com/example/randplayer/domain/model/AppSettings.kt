@@ -34,5 +34,6 @@ data class AppSettings(
     ),
     val preferredPlayerPackage: String? = null,
     val playerSelectionMode: PlayerSelectionMode = PlayerSelectionMode.SYSTEM_DEFAULT,
-    val theme: AppTheme = AppTheme.SYSTEM
+    val theme: AppTheme = AppTheme.SYSTEM,
+    val accentColorHex: String = "#3B82F6" // Default: Blue 500
 )

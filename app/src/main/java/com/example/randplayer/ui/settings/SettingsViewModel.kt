@@ -34,6 +34,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setAccentColor(hex: String) {
+        viewModelScope.launch {
+            settingsRepository.updateAccentColor(hex)
+        }
+    }
+
     fun setAutoSync(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.updateAutoSync(enabled)
