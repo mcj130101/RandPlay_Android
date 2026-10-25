@@ -8,6 +8,7 @@ import com.example.randplayer.sync.SyncCoordinator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -37,6 +38,30 @@ class SourcesViewModel @Inject constructor(
     fun deleteSource(sourceId: String) {
         viewModelScope.launch {
             sourceRepository.deleteSource(sourceId)
+        }
+    }
+
+    fun toggleSourceEnabled(sourceId: String, enabled: Boolean) {
+        viewModelScope.launch {
+            val source = sourceRepository.getSourceById(sourceId) ?: return@launch
+            sourceRepository.updateSource(source.copy(enabled = enabled))
+        }
+    }
+    
+    fun pingSources() {
+        viewModelScope.launch {
+            try {
+                // Fetch the list of sources directly from the repository
+                // instead of using uiState, which might not be initialized yet on app start
+                val sources = sourceRepository.getAllSources().first()
+                sources.forEach { source ->
+                    if (source.enabled) {
+                        syncCoordinator.pingSource(source.id)
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle potential errors fetching sources
+            }
         }
     }
 }

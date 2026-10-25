@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class LogsUiState(
@@ -27,7 +28,6 @@ class LogsViewModel @Inject constructor(
 
     val uiState: StateFlow<LogsUiState> = _selectedSourceId.flatMapLatest { sourceId ->
         if (sourceId == null) {
-            // Generic logs or empty
             kotlinx.coroutines.flow.flowOf(emptyList())
         } else {
             sourceRepository.getLogsBySource(sourceId)
@@ -37,5 +37,12 @@ class LogsViewModel @Inject constructor(
 
     fun selectSource(sourceId: String?) {
         _selectedSourceId.value = sourceId
+    }
+
+    fun clearLogs() {
+        val sourceId = _selectedSourceId.value ?: return
+        viewModelScope.launch {
+            sourceRepository.clearLogsForSource(sourceId)
+        }
     }
 }

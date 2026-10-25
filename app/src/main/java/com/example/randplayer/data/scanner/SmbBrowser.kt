@@ -1,7 +1,7 @@
 package com.example.randplayer.data.scanner
 
+import com.example.randplayer.domain.browser.BrowserFileItem
 import com.hierynomus.smbj.auth.AuthenticationContext
-import jcifs.context.SingletonContext
 import jcifs.smb.NtlmPasswordAuthenticator
 import jcifs.smb.SmbFile
 import kotlinx.coroutines.Dispatchers
@@ -18,8 +18,14 @@ data class SmbFileItem(
 @Singleton
 class SmbBrowser @Inject constructor() {
 
-    private fun getJcifsContext(authContext: AuthenticationContext) = 
-        SingletonContext.getInstance().withCredentials(
+    private fun getJcifsContext(authContext: AuthenticationContext) = run {
+        val prop = java.util.Properties()
+        prop.setProperty("jcifs.smb.client.enableSMB2", "true")
+        prop.setProperty("jcifs.smb.client.useSMB2Negotiation", "true")
+        prop.setProperty("jcifs.resolveOrder", "DNS")
+        val config = jcifs.config.PropertyConfiguration(prop)
+        val baseContext = jcifs.context.BaseContext(config)
+        baseContext.withCredentials(
             if (authContext.isAnonymous) {
                 NtlmPasswordAuthenticator()
             } else {
@@ -30,6 +36,7 @@ class SmbBrowser @Inject constructor() {
                 )
             }
         )
+    }
 
     suspend fun listShares(server: String, authContext: AuthenticationContext): Result<List<String>> = withContext(Dispatchers.IO) {
         try {
@@ -51,22 +58,85 @@ class SmbBrowser @Inject constructor() {
     suspend fun listFolders(server: String, share: String, path: String, authContext: AuthenticationContext): Result<List<SmbFileItem>> = withContext(Dispatchers.IO) {
         try {
             val context = getJcifsContext(authContext)
-            // Ensure path starts with / and ends with / if not empty
-            val cleanPath = path.trim('/').let { if (it.isEmpty()) "" else "$it/" }
-            val url = "smb://$server/$share/$cleanPath"
+            val baseUrl = "smb://$server/${share.trim('/')}/"
+            val fullUrl = if (path.isEmpty()) baseUrl else "$baseUrl${path.trim('/')}/"
             
-            SmbFile(url, context).use { folder ->
-                val items = folder.listFiles()
+            SmbFile(fullUrl, context).use { folder ->
+                val folders = folder.listFiles()
                     .filter { it.isDirectory }
                     .map { file ->
+                        val name = file.name.removeSuffix("/")
+                        val relativePath = if (path.isEmpty()) name else "${path.trim('/')}/$name"
                         SmbFileItem(
-                            name = file.name.removeSuffix("/"),
+                            name = name,
                             isDirectory = true,
-                            path = cleanPath + file.name.removeSuffix("/")
+                            path = relativePath
                         )
                     }
-                    .sortedBy { it.name }
+                    .sortedBy { it.name.lowercase() }
+                Result.success(folders)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun listFiles(url: String, authContext: AuthenticationContext): Result<List<BrowserFileItem>> = withContext(Dispatchers.IO) {
+        try {
+            val context = getJcifsContext(authContext)
+            SmbFile(url, context).use { folder ->
+                val items = folder.listFiles()
+                    .map { file ->
+                        BrowserFileItem(
+                            id = file.url.toString(),
+                            name = file.name.removeSuffix("/"),
+                            isDirectory = file.isDirectory,
+                            size = if (file.isDirectory) 0 else file.length(),
+                            lastModified = file.lastModified(),
+                            path = file.url.toString(),
+                            mimeType = null // JCIFS doesn't give mime type easily
+                        )
+                    }
+                    .sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
                 Result.success(items)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun delete(url: String, authContext: AuthenticationContext): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val context = getJcifsContext(authContext)
+            SmbFile(url, context).use { file ->
+                file.delete()
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun rename(url: String, newName: String, authContext: AuthenticationContext): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val context = getJcifsContext(authContext)
+            SmbFile(url, context).use { file ->
+                val parent = file.parent
+                val newFile = SmbFile(parent + newName, context)
+                file.renameTo(newFile)
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun createDirectory(url: String, authContext: AuthenticationContext): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val context = getJcifsContext(authContext)
+            SmbFile(url, context).use { file ->
+                file.mkdir()
+                Result.success(Unit)
             }
         } catch (e: Exception) {
             Result.failure(e)

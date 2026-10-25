@@ -34,5 +34,7 @@ class SourceRepository @Inject constructor(
 
     fun getLogsBySource(sourceId: String): Flow<List<SyncLogEntity>> = syncLogDao.getLogsBySource(sourceId)
     
+    suspend fun clearLogsForSource(sourceId: String) = syncLogDao.deleteLogsBySource(sourceId)
+    
     fun getSourceCount(): Flow<Int> = sourceDao.getSourceCount()
 }

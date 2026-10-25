@@ -49,6 +49,59 @@ class SourceEditorViewModel @Inject constructor(
     private val _smbAddState = MutableStateFlow<SmbAddState>(SmbAddState.Discovering)
     val smbAddState: StateFlow<SmbAddState> = _smbAddState.asStateFlow()
 
+    private val _editingSource = MutableStateFlow<VideoSourceEntity?>(null)
+    val editingSource: StateFlow<VideoSourceEntity?> = _editingSource.asStateFlow()
+
+    fun loadSource(sourceId: String) {
+        viewModelScope.launch {
+            val source = sourceRepository.getSourceById(sourceId)
+            _editingSource.value = source
+        }
+    }
+
+    fun updateLocalSource(id: String, name: String, uri: String, recursive: Boolean) {
+        viewModelScope.launch {
+            val existing = sourceRepository.getSourceById(id) ?: return@launch
+            val updated = existing.copy(
+                name = name,
+                location = uri,
+                recursive = recursive
+            )
+            sourceRepository.updateSource(updated)
+        }
+    }
+
+    fun updateSmbSource(
+        id: String,
+        name: String,
+        server: String,
+        share: String,
+        username: String?,
+        password: String?,
+        domain: String?,
+        recursive: Boolean
+    ) {
+        viewModelScope.launch {
+            val existing = sourceRepository.getSourceById(id) ?: return@launch
+            
+            var credentialId = existing.credentialId
+            if (!username.isNullOrEmpty() && password != null) {
+                if (credentialId == null) {
+                    credentialId = UUID.randomUUID().toString()
+                }
+                credentialStore.saveCredential(credentialId, username, password, domain)
+            }
+
+            val updated = existing.copy(
+                name = name,
+                location = "$server/$share",
+                credentialId = credentialId,
+                recursive = recursive
+            )
+            sourceRepository.updateSource(updated)
+        }
+    }
+
     init {
         viewModelScope.launch {
             discoveryManager.discoverServers().collectLatest {

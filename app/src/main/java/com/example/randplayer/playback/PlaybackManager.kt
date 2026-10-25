@@ -58,6 +58,10 @@ class PlaybackManager @Inject constructor(
             _playbackEvent.value = playbackSource
         }
     }
+    
+    fun playRaw(playbackSource: PlaybackSource) {
+        _playbackEvent.value = playbackSource
+    }
 
     fun onPlaybackLaunched() {
         _playbackEvent.value = null

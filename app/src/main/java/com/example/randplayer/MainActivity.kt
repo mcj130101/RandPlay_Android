@@ -50,6 +50,8 @@ import com.example.randplayer.domain.model.AppTheme
 import com.example.randplayer.domain.model.PlayerSelectionMode
 import com.example.randplayer.playback.PlaybackManager
 import com.example.randplayer.playback.PlaybackSource
+import com.example.randplayer.ui.explorer.ExplorerScreen
+import com.example.randplayer.ui.explorer.ExplorerViewModel
 import com.example.randplayer.ui.history.HistoryScreen
 import com.example.randplayer.ui.history.HistoryViewModel
 import com.example.randplayer.ui.home.HomeScreen
@@ -82,6 +84,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
+            val sourcesViewModel: com.example.randplayer.ui.sources.SourcesViewModel = hiltViewModel()
+            
+            // Ping sources on app start
+            LaunchedEffect(Unit) {
+                sourcesViewModel.pingSources()
+            }
             
             val isDarkTheme = when (settings.theme) {
                 AppTheme.SYSTEM -> isSystemInDarkTheme()
@@ -105,8 +113,10 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     object Liked : Screen("liked", label = "Liked", Icons.Default.Favorite)
     object Sources : Screen("sources", "Sources", Icons.AutoMirrored.Filled.List)
     object Settings : Screen("settings", "Settings", Icons.Default.Settings)
-    object AddSource : Screen("add_source", "Add Source", Icons.AutoMirrored.Filled.ListAlt)
+    object AddSource : Screen("add_source?sourceId={sourceId}", "Add Source", Icons.AutoMirrored.Filled.ListAlt)
+    object SourceDetail : Screen("source_detail/{sourceId}", "Source Detail", Icons.AutoMirrored.Filled.ListAlt)
     object Logs : Screen("logs/{sourceId}", "Logs", Icons.AutoMirrored.Filled.ListAlt)
+    object Explorer : Screen("explorer/{sourceId}", "Explorer", Icons.AutoMirrored.Filled.ListAlt)
 }
 
 @Composable
@@ -326,9 +336,29 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                 DashboardPager(pagerState, mainScreens, navController)
             }
             
-            composable(Screen.AddSource.route) {
+            composable(Screen.AddSource.route) { backStackEntry ->
+                val sourceId = backStackEntry.arguments?.getString("sourceId")
                 val viewModel: SourceEditorViewModel = hiltViewModel()
+                LaunchedEffect(sourceId) {
+                    if (!sourceId.isNullOrEmpty()) {
+                        viewModel.loadSource(sourceId)
+                    }
+                }
                 AddSourceScreen(viewModel) { navController.popBackStack() }
+            }
+            composable(Screen.SourceDetail.route) { backStackEntry ->
+                val sourceId = backStackEntry.arguments?.getString("sourceId") ?: return@composable
+                val viewModel: com.example.randplayer.ui.sources.SourceDetailViewModel = hiltViewModel()
+                LaunchedEffect(sourceId) {
+                    viewModel.initialize(sourceId)
+                }
+                com.example.randplayer.ui.sources.SourceDetailScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onEditSource = { id -> navController.navigate("add_source?sourceId=$id") },
+                    onViewLogs = { id -> navController.navigate("logs/$id") },
+                    onBrowse = { id -> navController.navigate("explorer/$id") }
+                )
             }
             composable(Screen.Logs.route) { backStackEntry ->
                 val sourceId = backStackEntry.arguments?.getString("sourceId")
@@ -336,7 +366,15 @@ fun MainScreen(playbackManager: PlaybackManager, appSettings: AppSettings) {
                 LaunchedEffect(sourceId) {
                     viewModel.selectSource(sourceId)
                 }
-                LogsScreen(viewModel)
+                LogsScreen(viewModel) { navController.popBackStack() }
+            }
+            composable(Screen.Explorer.route) { backStackEntry ->
+                val sourceId = backStackEntry.arguments?.getString("sourceId") ?: return@composable
+                val viewModel: ExplorerViewModel = hiltViewModel()
+                LaunchedEffect(sourceId) {
+                    viewModel.initialize(sourceId)
+                }
+                ExplorerScreen(viewModel) { navController.popBackStack() }
             }
         }
     }
@@ -371,8 +409,12 @@ fun DashboardPager(
                 val viewModel: SourcesViewModel = hiltViewModel()
                 SourcesScreen(
                     viewModel,
-                    onAddSource = { navController.navigate(Screen.AddSource.route) },
-                ) { sourceId -> navController.navigate("logs/$sourceId") }
+                    onAddSource = { navController.navigate("add_source?sourceId=") },
+                    onEditSource = { sourceId -> navController.navigate("add_source?sourceId=$sourceId") },
+                    onSourceDetail = { sourceId -> navController.navigate("source_detail/$sourceId") },
+                    onViewLogs = { sourceId -> navController.navigate("logs/$sourceId") },
+                    onBrowse = { sourceId -> navController.navigate("explorer/$sourceId") }
+                )
             }
             Screen.Settings -> {
                 val viewModel: SettingsViewModel = hiltViewModel()

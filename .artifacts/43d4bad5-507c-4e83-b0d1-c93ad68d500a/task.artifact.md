@@ -1,0 +1,3 @@
+- [x] Implement `listFolders` in `SmbBrowser.kt`
+- [x] Verify compilation of `SourceEditorViewModel.kt`
+- [x] Run build command to confirm fix

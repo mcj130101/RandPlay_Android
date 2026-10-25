@@ -9,8 +9,11 @@ import com.example.randplayer.data.repository.SourceRepository
 import com.example.randplayer.data.repository.VideoRepository
 import com.example.randplayer.data.scanner.LocalVideoScanner
 import com.example.randplayer.data.scanner.SmbVideoScanner
+import com.example.randplayer.data.local.SecureCredentialStore
 import com.example.randplayer.domain.scanner.ScanEvent
 import com.example.randplayer.domain.scanner.VideoSourceScanner
+import jcifs.smb.NtlmPasswordAuthenticator
+import jcifs.smb.SmbFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.sync.Mutex
@@ -24,7 +27,8 @@ class SyncCoordinator @Inject constructor(
     private val sourceRepository: SourceRepository,
     private val videoRepository: VideoRepository,
     private val localScanner: LocalVideoScanner,
-    private val smbScanner: SmbVideoScanner
+    private val smbScanner: SmbVideoScanner,
+    private val credentialStore: SecureCredentialStore
 ) {
     private val syncMutex = Mutex()
     private val activeSyncs = mutableSetOf<String>()
@@ -62,7 +66,10 @@ class SyncCoordinator @Inject constructor(
             }
 
             if (error != null) {
-                sourceRepository.updateSyncStatus(sourceId, SyncStatus.ERROR, error)
+                // Determine if it's an offline/network error
+                val status = if (isNetworkError(error)) SyncStatus.OFFLINE else SyncStatus.ERROR
+
+                sourceRepository.updateSyncStatus(sourceId, status, error)
                 sourceRepository.addSyncLog(SyncLogEntity(
                     sourceId = sourceId,
                     timestamp = System.currentTimeMillis(),
@@ -87,6 +94,56 @@ class SyncCoordinator @Inject constructor(
         }
     }
 
+    suspend fun pingSource(sourceId: String) = withContext(Dispatchers.IO) {
+        try {
+            val source = sourceRepository.getSourceById(sourceId) ?: return@withContext
+            if (source.type == SourceType.LOCAL) {
+                sourceRepository.updateSyncStatus(sourceId, SyncStatus.IDLE)
+                return@withContext
+            }
+
+            // Lightweight ping for SMB source
+            val auth = if (source.credentialId != null) {
+                val cred = credentialStore.getCredential(source.credentialId)
+                if (cred != null) {
+                    NtlmPasswordAuthenticator(cred.domain ?: "", cred.username, cred.password)
+                } else {
+                    NtlmPasswordAuthenticator()
+                }
+            } else {
+                NtlmPasswordAuthenticator()
+            }
+
+            val prop = java.util.Properties()
+            prop.setProperty("jcifs.smb.client.enableSMB2", "true")
+            prop.setProperty("jcifs.smb.client.useSMB2Negotiation", "true")
+            prop.setProperty("jcifs.resolveOrder", "DNS")
+            val config = jcifs.config.PropertyConfiguration(prop)
+            val baseContext = jcifs.context.BaseContext(config)
+            val context = baseContext.withCredentials(auth)
+
+            val cleanLocation = source.location.trim('/').replace("//", "/")
+            val rootUrl = "smb://$cleanLocation/"
+
+            try {
+                SmbFile(rootUrl, context).use { folder ->
+                    if (folder.exists()) {
+                        folder.listFiles()
+                        sourceRepository.updateSyncStatus(sourceId, SyncStatus.IDLE)
+                    } else {
+                        sourceRepository.updateSyncStatus(sourceId, SyncStatus.OFFLINE, "Share does not exist")
+                    }
+                }
+            } catch (e: Exception) {
+                val errorMsg = e.localizedMessage ?: e.toString()
+                val status = if (isNetworkError(errorMsg)) SyncStatus.OFFLINE else SyncStatus.ERROR
+                sourceRepository.updateSyncStatus(sourceId, status, errorMsg)
+            }
+        } catch (e: Exception) {
+            // Ignore
+        }
+    }
+
     private suspend fun updateDatabase(source: VideoSourceEntity, discovered: List<VideoEntity>) {
         if (discovered.isEmpty()) {
             // Optional: Should we delete old videos if none found? 
@@ -94,5 +151,14 @@ class SyncCoordinator @Inject constructor(
             return
         }
         videoRepository.insertVideos(discovered)
+    }
+
+    private fun isNetworkError(errorMsg: String?): Boolean {
+        if (errorMsg == null) return false
+        return errorMsg.contains("Timeout", ignoreCase = true) ||
+               errorMsg.contains("UnknownHost", ignoreCase = true) ||
+               errorMsg.contains("Unreachable", ignoreCase = true) ||
+               errorMsg.contains("Network is unreachable", ignoreCase = true) ||
+               errorMsg.contains("failed to connect", ignoreCase = true)
     }
 }

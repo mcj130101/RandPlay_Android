@@ -6,7 +6,6 @@ import com.example.randplayer.data.local.entity.VideoSourceEntity
 import com.example.randplayer.data.repository.SettingsRepository
 import com.example.randplayer.domain.scanner.ScanEvent
 import com.example.randplayer.domain.scanner.VideoSourceScanner
-import jcifs.context.SingletonContext
 import jcifs.smb.NtlmPasswordAuthenticator
 import jcifs.smb.SmbFile
 import kotlinx.coroutines.Dispatchers
@@ -45,9 +44,16 @@ class SmbVideoScanner @Inject constructor(
             NtlmPasswordAuthenticator()
         }
 
-        // SingletonContext.getInstance() can trigger network on main thread if not careful
+        val prop = java.util.Properties()
+        prop.setProperty("jcifs.smb.client.enableSMB2", "true")
+        prop.setProperty("jcifs.smb.client.useSMB2Negotiation", "true")
+        prop.setProperty("jcifs.resolveOrder", "DNS")
+        val config = jcifs.config.PropertyConfiguration(prop)
+        val baseContext = jcifs.context.BaseContext(config)
+        
+        // baseContext can trigger network on main thread if not careful
         // but here we are inside flow which will be shifted to IO by flowOn
-        val context = SingletonContext.getInstance().withCredentials(auth)
+        val context = baseContext.withCredentials(auth)
         
         // Ensure location doesn't have multiple leading slashes and starts with smb://
         val cleanLocation = source.location.trim('/').replace("//", "/")
@@ -62,6 +68,9 @@ class SmbVideoScanner @Inject constructor(
                     val files = try {
                         folder.listFiles()
                     } catch (e: Exception) {
+                        if (url == rootUrl) {
+                            throw e
+                        }
                         emit(ScanEvent.Progress(scanned, discovered)) // Just to show we are still alive
                         null
                     }
