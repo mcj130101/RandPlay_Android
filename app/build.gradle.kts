@@ -6,15 +6,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.randplayer"
+    namespace = "com.mcj130101.randplayer"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.example.randplayer"
+        applicationId = "com.mcj130101.randplayer"
         minSdk = 26
         targetSdk = 37
-        versionCode = 5
-        versionName = "1.4"
+        versionCode = 7
+        versionName = "1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -23,6 +23,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -35,6 +36,14 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("RandPlayer.apk")
+        }
     }
 }
 
